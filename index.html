@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Rate Musicians</title>
+
+  <style type="text/css">
+    .hide {
+        display: none;
+    }
+  </style>
+  <!-- Add icon library -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">   
+
+</head>
+<body>
+    <h1>Rate Musicians Here</h1>
+    <form id ="searchArtist">
+        Search Artist <input type="text" id="artist">
+        <button id="searchMusician" type="button" class="btn btn-dark">GO!</button>
+    </form>
+
+    <!-- $('#searchArtist input').val() -->
+    <!-- $('#searchArtist button').on('click', ...) -->
+
+    <div id="musicianContainer" align="center">
+        <p id="parRating" class="hide" >Average Rating of Musician: <span id="rating">No Ratings Yet</span></p>
+        <div id="musicianData"></div>
+        <form id="ratingForm" class="hide">
+            <select id="ratingSelect">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+
+            <button id="submitButton" type="button" class="btn btn-secondary">Submit Rating</button>
+        </form>
+    </div>
+    
+    <!-- Firebase Reference -->
+    <script src="https://www.gstatic.com/firebasejs/4.12.0/firebase.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+
+    <link rel="stylesheet" type="text/css" href="assets/css/style.css">
+    
+    <!-- Script -->
+    <script type="text/javascript">
+
+    // Initialize Firebase
+    var config = {
+        apiKey: "AIzaSyCge4l_B0plTfyqSmR9nC67hC03OIRMGpY",
+        authDomain: "ratingsample.firebaseapp.com",
+        databaseURL: "https://ratingsample.firebaseio.com",
+        projectId: "ratingsample",
+        storageBucket: "ratingsample.appspot.com",
+        messagingSenderId: "17842848775"
+    };
+
+    var musician;
+
+    firebase.initializeApp(config);
+
+    // Create a variable to reference the database.
+    var database = firebase.database();   
+
+    $('#searchMusician').on('click', function() {
+        event.preventDefault();
+        var artist = $('#artist').val();
+        var url_to_go_to = "https://rest.bandsintown.com/artists/" + artist + "?app_id=codingbootcamp";
+
+        $.ajax({
+            url: url_to_go_to,
+            method: "GET"
+        }).then(function(res) {
+            //clear the div
+        
+            $('musicianContainer').html("");
+            var band_a = $('<a>').attr('href', res.url);
+            var h1 = $('<h1>').text(res.name);
+                band_a.append(h1);
+            var img = $('<img>').attr('src', res.image_url).attr('width', "150").attr('height', "150");
+            var p_fans = $('<p>').text(' fans tracking this artist');
+                p_fans.prepend(res.tracker_count);
+            var p_upcoming_events = $('<p>').text(' upcoming events');
+                p_upcoming_events.prepend(res.upcoming_event_count);
+            var a_see_tour_dates = $('<a>').attr('href', res.url).text('see tour dates'); 
+            
+            //can't put this in a variable
+            // var showForm = $('#ratingForm').removeClass("hide");
+            $('#ratingForm').removeClass("hide");
+
+            //can't put this in a variable
+            // var showRating = $('#parRating').removeClass("hide");
+            $('#parRating').removeClass("hide");
+
+            $('#musicianData').empty().append(band_a, img, p_fans, p_upcoming_events, a_see_tour_dates);
+                
+            musician = res.name;
+                
+            var total = 0;
+            var count = 0;
+            var average = 0;
+
+            database.ref(musician).on("child_added", function(childSnapshot) {
+            
+                var rating = childSnapshot.val().rating;  
+
+                total += parseInt(rating);
+
+                count++;
+
+                average = total/count;
+
+                $('#rating').text(average);        
+            });
+        });
+    });
+
+    $('#submitButton').on('click', function() {
+        
+        event.preventDefault();
+
+        var rating = $('#ratingSelect').val();
+
+        database.ref(musician).push({  
+            rating: rating
+        }); 
+        debugger;
+
+    });
+
+    </script>
+</body>
+</html>
